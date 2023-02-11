@@ -4,25 +4,17 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class SaveSerial : MonoBehaviour
 {
-    public bool updated = false;
-
-    public List<Task> _taskList;
-    public int _currentIndex;
+    public int _index_courant = 0;
+    public List<HistoriqueDeTache> _historique;
+    public List<Tache> _taches_a_faire;
 
     private void Start()
     {
         LoadGame();
-    }
-
-    public void addTask(Task task)
-    {
-        task.id = _currentIndex;
-        _currentIndex += 1;
-        _taskList.Add(task);
-        SaveGame();
     }
 
     public void SaveGame()
@@ -30,9 +22,10 @@ public class SaveSerial : MonoBehaviour
         BinaryFormatter bf = new BinaryFormatter();
         FileStream file = File.Create(Application.persistentDataPath
                      + "/mainSettings.dat");
-        TaskList data = new TaskList();
-        data.task_list = _taskList;
-        data.currentIndex = _currentIndex;
+        Sauvegarde data = new Sauvegarde();
+        data.taches_a_faire = _taches_a_faire;
+        data.historique = _historique;
+        data.index_courant = _index_courant;
         bf.Serialize(file, data);
         file.Close();
         Debug.Log("Game data saved!");
@@ -47,59 +40,193 @@ public class SaveSerial : MonoBehaviour
             FileStream file =
                        File.Open(Application.persistentDataPath
                        + "/mainSettings.dat", FileMode.Open);
-            TaskList data = (TaskList)bf.Deserialize(file);
+            Sauvegarde data = (Sauvegarde)bf.Deserialize(file);
             file.Close();
-            _taskList = data.task_list;
-            _currentIndex = data.currentIndex;
+            _taches_a_faire = data.taches_a_faire;
+            _historique = data.historique;
+            _index_courant = data.index_courant;
             Debug.Log("Game data loaded!");
         }
-        else { 
+        else
+        {
             Debug.LogError("There is no save data! Reseting.");
             ResetData();
         }
-        updated = true;
     }
 
     void ResetData()
     {
-            _taskList = new List<Task>();
-            _currentIndex = 0;
-        if (File.Exists(Application.persistentDataPath  + "/mainSettings.dat"))
+        _taches_a_faire = new List<Tache>();
+        _index_courant = 0;
+        _historique = new List<HistoriqueDeTache>();
+        if (File.Exists(Application.persistentDataPath + "/mainSettings.dat"))
         {
-            File.Delete(Application.persistentDataPath  + "/mainSettings.dat");
+            File.Delete(Application.persistentDataPath + "/mainSettings.dat");
             Debug.Log("Data reset complete!");
         }
-        else { 
+        else
+        {
             Debug.LogError("No save data to delete, new data created!");
         }
         SaveGame();
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// CLASSES UTILES
+
+
 [Serializable]
-class TaskList
+class Sauvegarde
 {
-    public List<Task> task_list = new List<Task>();
-    public int currentIndex = 0;
+    public int index_courant = 0;
+    public List<HistoriqueDeTache> historique = new List<HistoriqueDeTache>();
+    public List<Tache> taches_a_faire = new List<Tache>();
 }
 
 [Serializable]
-public class Task
+public class HistoriqueDeTache
+{
+    public int id = -1;
+    public List<ObjectifJournalier> objectifsJournaliers = new List<ObjectifJournalier>();
+    public HistoriqueDeTache(int taskId)
+    {
+        id = taskId;
+    }
+
+    public void validateObjective(Tache task)
+    {
+        ObjectifJournalier last;
+        if (objectifsJournaliers.Count != 0) {
+            last = objectifsJournaliers.Last<ObjectifJournalier>();
+            if (last.jour == DateTime.Today)
+            {
+                last.fait += 1;
+                return;
+            }
+        }
+        objectifsJournaliers.Add(new ObjectifJournalier(task));
+        
+    }
+}
+
+[Serializable]
+public class Tache
 {
     public int id = -1;
     public String description = "description";
-    public float currentValue = 1;
+    public float valeur_actuelle = 1;
     public float modificateur_d_amelioration = 1;
-    public String modificateur_type = "*%"; // {* || +}{%}
-    public List<DateTime> jours_valides = new List<DateTime>();
-    public DateTime horaire = new DateTime(2022, 02, 10, 23, 00, 00);
+    public String type_de_modificateur = "*%"; // {* || +}{%}
+    public List<Session> liste_de_sessions = new List<Session>();
+    public int combo = 0;
 
-    public Task(String descript, float initialValue, float modificateur, string modifType, DateTime horaire_A_Repeter)
+    public Tache(String descr, float initialValue, float modificateur, string modifType, DateTime horaire_A_Repeter)
     {
-        description = descript;
-        currentValue = initialValue;
+        description = descr;
+        valeur_actuelle = initialValue;
         modificateur_d_amelioration = modificateur;
-        modificateur_type = modifType;
-        horaire = horaire_A_Repeter;
+        type_de_modificateur = modifType;
+        liste_de_sessions.Add(new Session(horaire_A_Repeter));
+    }
+
+    public void addSession(DateTime horaire_A_Repeter)
+    {
+        liste_de_sessions.Add(new Session(horaire_A_Repeter));
+    }
+
+    public bool updateSessions(List<Session> sessionList)
+    {
+        Debug.Log("new Sessions");
+        foreach (Session newSess in sessionList)
+        {
+            Debug.Log(newSess.horaire);
+        }
+
+        Debug.Log("old Sessions");
+        foreach (Session newSess in liste_de_sessions)
+        {
+            Debug.Log(newSess.horaire);
+        }
+
+        liste_de_sessions = sessionList;
+        return checkValidation();
+    }
+
+    public bool checkValidation()
+    {
+        int count = 0;
+        foreach (Session session in liste_de_sessions)
+        {
+            if (session.faite)
+            {
+                count += 1;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        combo += 1;
+        return true;
+    }
 }
+
+[Serializable]
+public class Session
+{
+    public DateTime horaire;
+    public bool faite = false;
+
+    public Session(DateTime horaire_de_session)
+    {
+        horaire = horaire_de_session;
+    }
+
+    public void end()
+    {
+        faite = true;
+    }
+}
+
+[Serializable]
+public class ObjectifJournalier
+{
+    public DateTime jour;
+    public int objectif = 2;
+    public int fait = 0;
+
+    public ObjectifJournalier(Tache task)
+    {
+        jour = DateTime.Today;
+        objectif = task.liste_de_sessions.Count;
+        foreach (Session session in task.liste_de_sessions)
+        {
+            if (session.faite)
+            {
+                fait += 1;
+            }
+        }
+    }
 }

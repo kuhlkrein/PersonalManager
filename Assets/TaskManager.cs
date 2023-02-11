@@ -14,28 +14,71 @@ public class TaskManager : MonoBehaviour
 
 
     // Update is called once per frame
-    void Update()
+    void Start()
     {
-        if (saveManager.updated)
+        foreach (Tache task in saveManager._taches_a_faire)
         {
-            saveManager.updated = false;
-            foreach (Task task in saveManager._taskList)
+            foreach (Session session in task.liste_de_sessions)
             {
-                addTaskToUI(task);
-                saveManager.updated = false;
+                if (!session.faite)
+                {
+                    addTaskToUI(task);
+                    break;
+                }
             }
         }
 
     }
 
+    public void updateTask(Tache taskToUpdate)
+    {
+        foreach (Tache task in saveManager._taches_a_faire)
+        {
+            if (task.id == taskToUpdate.id)
+            {
+                bool sessionsEnded = task.updateSessions(taskToUpdate.liste_de_sessions);
+                bool taskFind = false;
+                foreach (HistoriqueDeTache historique in saveManager._historique)
+                {
+                    if (historique.id == task.id)
+                    {
+                        taskFind = true;
+                        historique.validateObjective(task);
+                    }
+                }
+                if (!taskFind)
+                {
+                    HistoriqueDeTache historiqueDeTache = new HistoriqueDeTache(task.id);
+                    historiqueDeTache.validateObjective(task);
+                    saveManager._historique.Add(historiqueDeTache);
+                }
+                saveManager.SaveGame();
+                break;
+            }
+        }
+    }
+
+    public void addTask(Tache task)
+    {
+        task.id = saveManager._index_courant;
+        saveManager._index_courant += 1;
+        saveManager._taches_a_faire.Add(task);
+
+        HistoriqueDeTache historiqueDeTache = new HistoriqueDeTache(task.id);
+        saveManager._historique.Add(historiqueDeTache);
+
+        saveManager.SaveGame();
+    }
+
     public void addTestTask()
     {
-        Task testTask = new Task("test description : {1}", 2, 1, "*%", new DateTime(2022, 02, 11, 00, 00, 00));
-        saveManager.addTask(testTask);
+        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", new DateTime(2022, 1, 1, 20, 00, 00));
+        testTask.addSession(new DateTime(2022, 1, 1, 22, 0, 0));
+        addTask(testTask);
         addTaskToUI(testTask);
     }
 
-    public void addTaskToUI(Task task)
+    public void addTaskToUI(Tache task)
     {
         GameObject taskObject = Instantiate(taskPrefab, tasksParent);
         taskObject.GetComponent<TaskConstructor>().init(task);
