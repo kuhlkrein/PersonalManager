@@ -9,8 +9,15 @@ public class TaskManager : MonoBehaviour
 {
 
     public SaveSerial saveManager;
+
     public GameObject taskPrefab;
     public Transform tasksParent;
+
+    public GameObject nextDayTaskPrefab;
+    public Transform nextDayTaskParent;
+
+    public GameObject doneTaskTaskPrefab;
+    public Transform doneTaskParent;
 
 
     // Update is called once per frame
@@ -18,13 +25,26 @@ public class TaskManager : MonoBehaviour
     {
         foreach (Tache task in saveManager._taches_a_faire)
         {
-            foreach (Session session in task.liste_de_sessions)
+            if (task.liste_de_sessions[0].horaire.Date.DayOfYear == DateTime.Today.DayOfYear)
             {
-                if (!session.faite)
+                bool todo = false;
+                foreach (Session session in task.liste_de_sessions)
                 {
-                    addTaskToUI(task);
-                    break;
+                    if (!session.faite)
+                    {
+                        todo = true;
+                        taskToDo(task, session.horaire.Hour);
+                        break;
+                    }
                 }
+
+                if (!todo)
+                {
+                    taskDone(task);
+                }
+            } else
+            {
+                taskForNextDay(task);
             }
         }
 
@@ -72,15 +92,34 @@ public class TaskManager : MonoBehaviour
 
     public void addTestTask()
     {
-        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", new DateTime(2022, 1, 1, 20, 00, 00));
-        testTask.addSession(new DateTime(2022, 1, 1, 22, 0, 0));
+        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", new DateTime(2022, 4, 1, 20, 00, 00));
+        testTask.addSession(new DateTime(2022, 4, 1, 22, 0, 0));
         addTask(testTask);
-        addTaskToUI(testTask);
+        foreach (Session session in testTask.liste_de_sessions)
+        {
+            if (!session.faite)
+            {
+                taskToDo(testTask, session.horaire.Hour);
+                break;
+            }
+        }
     }
 
-    public void addTaskToUI(Tache task)
+    public void taskToDo(Tache task, int hour)
     {
         GameObject taskObject = Instantiate(taskPrefab, tasksParent);
-        taskObject.GetComponent<TaskConstructor>().init(task);
+        taskObject.GetComponent<TaskConstructor>().initToDo(task, hour);
+    }
+
+    public void taskForNextDay(Tache task)
+    {
+        GameObject taskObject = Instantiate(nextDayTaskPrefab, nextDayTaskParent);
+        taskObject.GetComponent<TaskConstructor>().initForNextDay(task);
+    }
+
+    public void taskDone(Tache task)
+    {
+        GameObject taskObject = Instantiate(doneTaskTaskPrefab, doneTaskParent);
+        taskObject.GetComponent<TaskConstructor>().initDone(task);
     }
 }

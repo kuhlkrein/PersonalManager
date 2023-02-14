@@ -43,9 +43,20 @@ public class SaveSerial : MonoBehaviour
             Sauvegarde data = (Sauvegarde)bf.Deserialize(file);
             file.Close();
             _taches_a_faire = data.taches_a_faire;
+
+            foreach(Tache _task in _taches_a_faire)
+            {
+            int iteration = 0;
+            while (_task.liste_de_sessions[0].horaire.Date.DayOfYear < DateTime.Today.DayOfYear && iteration < 365)
+            {
+                _task.liste_de_sessions[0].horaire = _task.liste_de_sessions[0].horaire.Date.AddDays(_task.daySpace);
+                iteration++;
+            }
+            }
             _historique = data.historique;
             _index_courant = data.index_courant;
             Debug.Log("Game data loaded!");
+            SaveGame();
         }
         else
         {
@@ -140,15 +151,17 @@ public class Tache
     public float modificateur_d_amelioration = 1;
     public String type_de_modificateur = "*%"; // {* || +}{%}
     public List<Session> liste_de_sessions = new List<Session>();
+    public int daySpace = 1;
     public int combo = 0;
 
-    public Tache(String descr, float initialValue, float modificateur, string modifType, DateTime horaire_A_Repeter)
+    public Tache(String descr, float initialValue, float modificateur, string modifType, DateTime horaire_A_Repeter, int dayBetweenTask=1)
     {
         description = descr;
         valeur_actuelle = initialValue;
         modificateur_d_amelioration = modificateur;
         type_de_modificateur = modifType;
         liste_de_sessions.Add(new Session(horaire_A_Repeter));
+        daySpace = dayBetweenTask;
     }
 
     public void addSession(DateTime horaire_A_Repeter)
