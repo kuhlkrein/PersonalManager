@@ -25,29 +25,35 @@ public class TaskManager : MonoBehaviour
     {
         foreach (Tache task in saveManager._taches_a_faire)
         {
-            if (task.liste_de_sessions[0].horaire.Date.DayOfYear == DateTime.Today.DayOfYear)
-            {
-                bool todo = false;
-                foreach (Session session in task.liste_de_sessions)
-                {
-                    if (!session.faite)
-                    {
-                        todo = true;
-                        taskToDo(task, session.horaire.Hour);
-                        break;
-                    }
-                }
-
-                if (!todo)
-                {
-                    taskDone(task);
-                }
-            } else
-            {
-                taskForNextDay(task);
-            }
+            checkTask(task);
         }
 
+    }
+
+    public void checkTask(Tache task)
+    {
+        if (task.liste_de_sessions[0].horaire.Date.DayOfYear == DateTime.Today.DayOfYear)
+        {
+            bool todo = false;
+            foreach (Session session in task.liste_de_sessions)
+            {
+                if (!session.faite)
+                {
+                    todo = true;
+                    taskToDo(task, session.horaire.Hour);
+                    break;
+                }
+            }
+
+            if (!todo)
+            {
+                taskDone(task);
+            }
+        }
+        else
+        {
+            taskForNextDay(task);
+        }
     }
 
     public void updateTask(Tache taskToUpdate)
@@ -95,14 +101,7 @@ public class TaskManager : MonoBehaviour
         Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", new DateTime(2022, 4, 1, 20, 00, 00));
         testTask.addSession(new DateTime(2022, 4, 1, 22, 0, 0));
         addTask(testTask);
-        foreach (Session session in testTask.liste_de_sessions)
-        {
-            if (!session.faite)
-            {
-                taskToDo(testTask, session.horaire.Hour);
-                break;
-            }
-        }
+        checkTask(testTask);
     }
 
     public void taskToDo(Tache task, int hour)
