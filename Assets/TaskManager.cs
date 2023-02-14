@@ -96,10 +96,24 @@ public class TaskManager : MonoBehaviour
         saveManager.SaveGame();
     }
 
-    public void addTestTask()
+    public void addTestTaskToDo()
     {
-        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", new DateTime(2022, 4, 1, 20, 00, 00));
-        testTask.addSession(new DateTime(2022, 4, 1, 22, 0, 0));
+        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", DateTime.Today.AddHours(20));
+        testTask.addSession(DateTime.Today.AddHours(21));
+        testTask.addSession(DateTime.Today.AddHours(22));
+        addTask(testTask);
+        checkTask(testTask);
+    }
+    public void addTestTaskDone()
+    {
+        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", DateTime.Today.AddHours(20));
+        testTask.liste_de_sessions[0].faite = true;
+        addTask(testTask);
+        checkTask(testTask);
+    }
+    public void addTestTaskForNextDay()
+    {
+        Tache testTask = new Tache("Faire des pompes pendant {1} secondes", 2, 1, "*%", DateTime.Today.AddDays(1).AddHours(20));
         addTask(testTask);
         checkTask(testTask);
     }
