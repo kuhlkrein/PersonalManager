@@ -28,7 +28,7 @@ public class SaveSerial : MonoBehaviour
         data.index_courant = _index_courant;
         bf.Serialize(file, data);
         file.Close();
-        Debug.Log("Game data saved!");
+        Debug.LogWarning("Game data saved!");
     }
 
     public void LoadGame()
@@ -44,18 +44,22 @@ public class SaveSerial : MonoBehaviour
             file.Close();
             _taches_a_faire = data.taches_a_faire;
 
-            foreach(Tache _task in _taches_a_faire)
+            foreach (Tache _task in _taches_a_faire)
             {
-            int iteration = 0;
-            while (_task.liste_de_sessions[0].horaire.Date.DayOfYear < DateTime.Today.DayOfYear && iteration < 365)
-            {
-                _task.liste_de_sessions[0].horaire = _task.liste_de_sessions[0].horaire.Date.AddDays(_task.daySpace);
-                iteration++;
-            }
+                foreach (Session session in _task.liste_de_sessions)
+                {
+                    int iteration = 0;
+                    while (session.horaire.Date.DayOfYear < DateTime.Today.DayOfYear && iteration < 365)
+                    {
+                        session.horaire = session.horaire.Date.AddDays(_task.daySpace);
+                        iteration++;
+                    }
+                }
+
             }
             _historique = data.historique;
             _index_courant = data.index_courant;
-            Debug.Log("Game data loaded!");
+            Debug.LogWarning("Game data loaded!");
             SaveGame();
         }
         else
@@ -73,7 +77,7 @@ public class SaveSerial : MonoBehaviour
         if (File.Exists(Application.persistentDataPath + "/mainSettings.dat"))
         {
             File.Delete(Application.persistentDataPath + "/mainSettings.dat");
-            Debug.Log("Data reset complete!");
+            Debug.LogWarning("Data reset complete!");
         }
         else
         {
@@ -129,7 +133,8 @@ public class HistoriqueDeTache
     public void validateObjective(Tache task)
     {
         ObjectifJournalier last;
-        if (objectifsJournaliers.Count != 0) {
+        if (objectifsJournaliers.Count != 0)
+        {
             last = objectifsJournaliers.Last<ObjectifJournalier>();
             if (last.jour == DateTime.Today)
             {
@@ -138,7 +143,7 @@ public class HistoriqueDeTache
             }
         }
         objectifsJournaliers.Add(new ObjectifJournalier(task));
-        
+
     }
 }
 
@@ -154,7 +159,7 @@ public class Tache
     public int daySpace = 1;
     public int combo = 0;
 
-    public Tache(String descr, float initialValue, float modificateur, string modifType, DateTime horaire_A_Repeter, int dayBetweenTask=1)
+    public Tache(String descr, float initialValue, float modificateur, string modifType, DateTime horaire_A_Repeter, int dayBetweenTask = 1)
     {
         description = descr;
         valeur_actuelle = initialValue;

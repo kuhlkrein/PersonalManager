@@ -98,6 +98,43 @@ public class TaskConstructor : MonoBehaviour
 
     }
 
+    public void UpdateValueWithModificator()
+    {
+        string modifType = _task.type_de_modificateur;
+        float modif = _task.modificateur_d_amelioration;
+
+        if (modifType.Contains("%"))
+        {
+            modif = modif / 100.0f;
+        }
+
+        if (modifType.Contains("*"))
+        {
+            _task.valeur_actuelle = _task.valeur_actuelle * modif;
+        }
+        else if (modifType.Contains("+"))
+        {
+            _task.valeur_actuelle = _task.valeur_actuelle + modif;
+        }
+        else if (modifType.Contains("-"))
+        {
+            _task.valeur_actuelle = _task.valeur_actuelle - modif;
+        }
+        else if (modifType.Contains("/"))
+        {
+            _task.valeur_actuelle = _task.valeur_actuelle / modif;
+        }
+    }
+
+    public void updateDueDate()
+    {
+        foreach(Session session in _task.liste_de_sessions)
+        {
+            session.horaire.AddDays(_task.daySpace);
+            session.faite = false;
+        }
+    }
+
     public void TaskDone()
     {
         GameObject.FindObjectOfType<TaskManager>().taskDone(_task);
